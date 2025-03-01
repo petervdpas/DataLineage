@@ -1,12 +1,12 @@
 ﻿using Models.Source;
 using Models.Target;
-using Mapping;
 using System;
-using Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Generic;
-using Lineage;
 using System.Linq;
+using DataLineage.Tracking.Interfaces;
+using DataLineage.Tracking.Lineage;
+using DataLineage.Tracking.Mapping;
 
 class Program
 {
@@ -14,13 +14,19 @@ class Program
     {
         // Set up Dependency Injection (DI)
         var serviceProvider = new ServiceCollection()
-            .AddSingleton<IPocoMapper, PocoMapper>()
-            .AddSingleton<IDataLineageTracker, DataLineageTracker>()
+            .AddSingleton<IDataLineageTracker, DataLineageTracker>() // Using NuGet package
+            .AddSingleton<IEntityMapper, BasicEntityMapper>() // Base Mapper (without lineage)
+            .AddSingleton<IEntityMapper>(sp => 
+                new EntityMapperWithLineage(
+                    sp.GetRequiredService<IEntityMapper>(), 
+                    sp.GetRequiredService<IDataLineageTracker>()
+                )
+            ) // Mapper with lineage tracking
             .BuildServiceProvider();
 
-        // Resolve dependencies
-        var mapper = serviceProvider.GetRequiredService<IPocoMapper>();
+        // Resolve the lineage tracker and mapper
         var lineageTracker = serviceProvider.GetRequiredService<IDataLineageTracker>();
+        var mapper = serviceProvider.GetRequiredService<IEntityMapper>();
 
 
         // Create sample instances of PocoX and PocoY
@@ -39,7 +45,7 @@ class Program
             PocoYDate = new DateOnly(2024, 2, 25)
         };
 
-        // Define a mapping function with detailed lineage tracking
+        // Define a mapping function
         Func<IEnumerable<object>, PocoA> mapToPocoA = (sources) =>
         {
             var x = sources.OfType<PocoX>().FirstOrDefault();
@@ -71,10 +77,10 @@ class Program
         // Provide the list of source POCOs
         var sources = new List<object> { pocoX, pocoY };
 
-        // Map to PocoA
-        PocoA pocoA = mapper.Map(sources, mapToPocoA);
+        // Perform mapping
+        PocoA pocoA = mapper.Map(sources, mapToPocoA, lineageTracker);
 
-        // Display the result
+        // Display results
         Console.WriteLine("Mapped PocoA:");
         Console.WriteLine($"Bk: {pocoA.Bk}");
         Console.WriteLine($"NamedCode: {pocoA.NamedCode}");
