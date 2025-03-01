@@ -9,11 +9,12 @@ namespace Mapping
         public TResult Map<TSource, TResult>(
             IEnumerable<TSource> sources,
             Func<IEnumerable<TSource>, TResult> mappingFunction,
-            IDataLineageTracker? lineageTracker = null)
+            IDataLineageTracker? lineageTracker = null) // Optional tracker
         {
+            // Perform mapping
             TResult result = mappingFunction.Invoke(sources);
 
-            // If lineage tracking is enabled, extract the lineage
+            // If lineage tracking is provided, track lineage
             if (lineageTracker != null)
             {
                 foreach (var source in sources)
@@ -21,13 +22,13 @@ namespace Mapping
                     if (source != null)
                     {
                         lineageTracker.Track(
-                            sourceName: $"{source.GetType().Name}_{Guid.NewGuid().ToString().Substring(0, 8)}", // Unique instance identifier
-                            sourceEntity: source.GetType().Name, // Source class name
+                            sourceName: $"{source.GetType().Name}_{Guid.NewGuid().ToString().Substring(0, 8)}", // Unique instance
+                            sourceEntity: source.GetType().Name,
                             sourceField: "Unknown Field", // Generic level does not know exact field names
                             transformationRule: "Generic Mapping Rule", // Generic level does not know exact rules
-                            targetName: $"{typeof(TResult).Name}_{Guid.NewGuid().ToString().Substring(0, 8)}", // Unique instance identifier for target
-                            targetEntity: typeof(TResult).Name, // Target class name
-                            targetField: "Unknown Field" // Generic level does not know exact field names
+                            targetName: $"{typeof(TResult).Name}_{Guid.NewGuid().ToString().Substring(0, 8)}", // Unique instance
+                            targetEntity: typeof(TResult).Name,
+                            targetField: "Unknown Field"
                         );
                     }
                 }
