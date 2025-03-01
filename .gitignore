@@ -1,7 +1,12 @@
+# Ignore build outputs
 bin/
 obj/
+
+# Ignore Visual Studio specific files
 .vs/
 *.user
 *.suo
 *.csproj.user
+
+# Ignore local IDE settings
 */.vscode/*
