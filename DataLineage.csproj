@@ -5,9 +5,11 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="DataLineage.Tracking" Version="1.0.0" />
+    <PackageReference Include="DataLineage.Tracking" Version="1.0.8" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.2" />
   </ItemGroup>
 </Project>

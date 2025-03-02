@@ -4,9 +4,8 @@ using System;
 using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Generic;
 using System.Linq;
+using DataLineage.Tracking;
 using DataLineage.Tracking.Interfaces;
-using DataLineage.Tracking.Lineage;
-using DataLineage.Tracking.Mapping;
 
 class Program
 {
@@ -14,20 +13,13 @@ class Program
     {
         // Set up Dependency Injection (DI)
         var serviceProvider = new ServiceCollection()
-            .AddSingleton<IDataLineageTracker, DataLineageTracker>() // Using NuGet package
-            .AddSingleton<IEntityMapper, BasicEntityMapper>() // Base Mapper (without lineage)
-            .AddSingleton<IEntityMapper>(sp => 
-                new EntityMapperWithLineage(
-                    sp.GetRequiredService<IEntityMapper>(), 
-                    sp.GetRequiredService<IDataLineageTracker>()
-                )
-            ) // Mapper with lineage tracking
+            // Register Data Lineage Tracker
+            .AddDataLineageTracking()
             .BuildServiceProvider();
 
         // Resolve the lineage tracker and mapper
         var lineageTracker = serviceProvider.GetRequiredService<IDataLineageTracker>();
         var mapper = serviceProvider.GetRequiredService<IEntityMapper>();
-
 
         // Create sample instances of PocoX and PocoY
         PocoX pocoX = new PocoX
