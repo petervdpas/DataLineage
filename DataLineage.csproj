@@ -9,7 +9,7 @@
     <SelfContained>true</SelfContained>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="DataLineage.Tracking" Version="1.0.8" />
+    <PackageReference Include="DataLineage.Tracking" Version="1.0.10" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.2" />
   </ItemGroup>
 </Project>

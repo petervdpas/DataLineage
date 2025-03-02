@@ -49,14 +49,20 @@ class Program
             string targetName = "FCDM";
 
             // Track lineage for each mapped property
-            lineageTracker.Track(sourceName, nameof(PocoX), nameof(PocoX.Id), "Concatenation with PocoY.Code",
-                targetName, nameof(PocoA), nameof(PocoA.Bk));
+            lineageTracker.Track(
+                sourceName, nameof(PocoX), nameof(PocoX.Id), true, "Identifier",
+                "Concatenation with PocoY.Code",
+                targetName, nameof(PocoA), nameof(PocoA.Bk), true, "BusinessKey");
 
-            lineageTracker.Track(sourceName, nameof(PocoX), nameof(PocoX.Name), "Concatenation with PocoY.Code",
-                targetName, nameof(PocoA), nameof(PocoA.NamedCode));
+            lineageTracker.Track(
+                sourceName, nameof(PocoX), nameof(PocoX.Name), true, "The Code for PocoX",
+                "Concatenation with PocoY.Code",
+                targetName, nameof(PocoA), nameof(PocoA.NamedCode), true, "A NameCode");
 
-            lineageTracker.Track(sourceName, nameof(PocoY), nameof(PocoY.PocoYDate), "Direct mapping",
-                targetName, nameof(PocoA), nameof(PocoA.Date));
+            lineageTracker.Track(
+                sourceName, nameof(PocoY), nameof(PocoY.PocoYDate), true, "A Date",
+                "Direct mapping",
+                targetName, nameof(PocoA), nameof(PocoA.Date), true, "A Date");
 
             return new PocoA
             {
