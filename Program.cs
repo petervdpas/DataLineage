@@ -8,6 +8,7 @@ using System.Linq;
 using DataLineage.Tracking;
 using DataLineage.Tracking.Interfaces;
 using DataLayer;
+using Mappers;
 
 class Program
 {
@@ -26,12 +27,13 @@ class Program
         var serviceProvider = new ServiceCollection()
             .AddSingleton<IDbLayer>(sp => new DbLayer(connectionString))
             .AddDataLineageTracking()
+            .AddSingleton<PocoMapper>()
             .BuildServiceProvider();
 
         // Resolve services
         var dbLayer = serviceProvider.GetRequiredService<IDbLayer>();
         var lineageTracker = serviceProvider.GetRequiredService<IDataLineageTracker>();
-        var mapper = serviceProvider.GetRequiredService<IEntityMapper>();
+        var pocoMapper = serviceProvider.GetRequiredService<PocoMapper>();
 
         // ✅ Ensure database schema is created **before** inserting records
         dbLayer.InitializeDatabase(typeof(PocoX), typeof(PocoY));
@@ -67,52 +69,15 @@ class Program
         var allPocoX = dbLayer.GetAll<PocoX>();
         var allPocoY = dbLayer.GetAll<PocoY>();
 
-        // 🔹 Perform LINQ join between PocoX and PocoY in memory
+
+        // 🔹 Use LINQ to join PocoX and PocoY in-memory
         var joinedRecords = from x in allPocoX
                             join y in allPocoY on x.Id equals y.PocoXId
-                            select new
-                            {
-                                PocoX = x,
-                                PocoY = y
-                            };
+                            select new { PocoX = x, PocoY = y };
 
-        var mappedPocoARecords = new List<PocoA>();
-
-        foreach (var record in joinedRecords)
-        {
-            Func<IEnumerable<object>, PocoA> mapToPocoA = (sources) =>
-            {
-                var pocoX = record.PocoX;
-                var pocoY = record.PocoY;
-
-                string sourceName = "Progress";
-                string targetName = "FCDM";
-
-                // Track lineage for each mapped property
-                lineageTracker.Track(sourceName, nameof(PocoX), nameof(PocoX.Id), true, "Identifier",
-                    "Concatenation with PocoY.Code",
-                    targetName, nameof(PocoA), nameof(PocoA.Bk), true, "BusinessKey");
-
-                lineageTracker.Track(sourceName, nameof(PocoX), nameof(PocoX.Name), true, "The Code for PocoX",
-                    "Concatenation with PocoY.Code",
-                    targetName, nameof(PocoA), nameof(PocoA.NamedCode), true, "A NameCode");
-
-                lineageTracker.Track(sourceName, nameof(PocoY), nameof(PocoY.PocoYDate), true, "A Date",
-                    "Direct mapping",
-                    targetName, nameof(PocoA), nameof(PocoA.Date), true, "A Date");
-
-                return new PocoA
-                {
-                    Bk = $"{pocoX.Id}_{pocoY.Code}",
-                    NamedCode = $"{pocoX.Name}-{pocoY.Code}",
-                    Date = pocoY.PocoYDate
-                };
-            };
-
-            var sources = new List<object> { record.PocoX, record.PocoY };
-            var pocoA = mapper.Map(sources, mapToPocoA, lineageTracker);
-            mappedPocoARecords.Add(pocoA);
-        }
+        var mappedPocoARecords = joinedRecords
+            .Select(record => pocoMapper.Map(record.PocoX, record.PocoY))
+            .ToList();
 
         // 🔹 Display mapped records
         Console.WriteLine("\nMapped PocoA Records:");
