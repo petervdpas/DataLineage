@@ -1,5 +1,4 @@
 ﻿using Models.Source;
-using Models.Target;
 using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
@@ -9,6 +8,7 @@ using DataLineage.Tracking;
 using DataLineage.Tracking.Interfaces;
 using DataLayer;
 using Mappers;
+using DataLineage.Tracking.Sinks;
 
 class Program
 {
@@ -26,7 +26,12 @@ class Program
         // Set up Dependency Injection (DI)
         var serviceProvider = new ServiceCollection()
             .AddSingleton<IDbLayer>(sp => new DbLayer(connectionString))
-            .AddDataLineageTracking()
+            .AddDataLineageTracking(options =>
+            {
+                options.EnableLineageTracking = true;
+                options.ThrowOnNullSources = true;
+            },
+            new FileLineageSink("lineage.json", append: false))
             .AddSingleton<PocoMapper>()
             .BuildServiceProvider();
 
@@ -64,7 +69,6 @@ class Program
         foreach (var x in pocoXRecords) dbLayer.Insert(x);
         foreach (var y in pocoYRecords) dbLayer.Insert(y);
 
-
         // 🔹 Retrieve all records from the database
         var allPocoX = dbLayer.GetAll<PocoX>();
         var allPocoY = dbLayer.GetAll<PocoY>();
@@ -75,13 +79,13 @@ class Program
                             join y in allPocoY on x.Id equals y.PocoXId
                             select new { PocoX = x, PocoY = y };
 
-        var mappedPocoARecords = joinedRecords
+        var mappedRecords = joinedRecords
             .Select(record => pocoMapper.Map(record.PocoX, record.PocoY))
             .ToList();
 
         // 🔹 Display mapped records
         Console.WriteLine("\nMapped PocoA Records:");
-        foreach (var pocoA in mappedPocoARecords)
+        foreach (var pocoA in mappedRecords)
         {
             Console.WriteLine($"Bk: {pocoA.Bk}, NamedCode: {pocoA.NamedCode}, Date: {pocoA.Date}");
         }

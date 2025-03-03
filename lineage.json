@@ -1,0 +1,15 @@
+[
+  {
+    "SourceSystem": "Progress",
+    "SourceEntity": "PocoY",
+    "SourceField": "PocoYDate",
+    "SourceValidated": true,
+    "SourceDescription": "A Date",
+    "TransformationRule": "Direct mapping",
+    "TargetSystem": "FCDM",
+    "TargetEntity": "PocoA",
+    "TargetField": "Date",
+    "TargetValidated": true,
+    "TargetDescription": "A Date"
+  }
+]
