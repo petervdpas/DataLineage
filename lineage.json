@@ -1,15 +1,41 @@
 [
   {
     "SourceSystem": "Progress",
+    "SourceEntity": "PocoX",
+    "SourceField": "Id",
+    "SourceValidated": true,
+    "SourceDescription": "Tracked Field",
+    "TransformationRule": "Concatenation with PocoY.Code",
+    "TargetSystem": "FCDM",
+    "TargetEntity": "PocoA",
+    "TargetField": "Bk",
+    "TargetValidated": true,
+    "TargetDescription": "Mapped Field"
+  },
+  {
+    "SourceSystem": "Progress",
+    "SourceEntity": "PocoX",
+    "SourceField": "Name",
+    "SourceValidated": true,
+    "SourceDescription": "Tracked Field",
+    "TransformationRule": "Concatenation with PocoY.Code",
+    "TargetSystem": "FCDM",
+    "TargetEntity": "PocoA",
+    "TargetField": "NamedCode",
+    "TargetValidated": true,
+    "TargetDescription": "Mapped Field"
+  },
+  {
+    "SourceSystem": "Progress",
     "SourceEntity": "PocoY",
     "SourceField": "PocoYDate",
     "SourceValidated": true,
-    "SourceDescription": "A Date",
+    "SourceDescription": "Tracked Field",
     "TransformationRule": "Direct mapping",
     "TargetSystem": "FCDM",
     "TargetEntity": "PocoA",
     "TargetField": "Date",
     "TargetValidated": true,
-    "TargetDescription": "A Date"
+    "TargetDescription": "Mapped Field"
   }
 ]

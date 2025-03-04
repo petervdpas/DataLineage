@@ -4,11 +4,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using System.Collections.Generic;
 using System.Linq;
-using DataLineage.Tracking;
-using DataLineage.Tracking.Interfaces;
 using DataLayer;
 using Mappers;
+using System.Reflection;
+using Models.Target;
+using DataLineage.Tracking;
 using DataLineage.Tracking.Sinks;
+using DataLineage.Tracking.Interfaces;
 
 class Program
 {
@@ -26,19 +28,29 @@ class Program
         // Set up Dependency Injection (DI)
         var serviceProvider = new ServiceCollection()
             .AddSingleton<IDbLayer>(sp => new DbLayer(connectionString))
-            .AddDataLineageTracking(options =>
-            {
-                options.EnableLineageTracking = true;
-                options.ThrowOnNullSources = true;
-            },
-            new FileLineageSink("lineage.json", append: false))
-            .AddSingleton<PocoMapper>()
+            .AddDataLineageTracking(
+                Assembly.GetExecutingAssembly(),
+                options =>
+                {
+                    options.EnableLineageTracking = true;
+                    options.ThrowOnNullSources = true;
+                },
+                new FileLineageSink("lineage.json", append: true))
+
+            // Register BaseMapper (without lineage tracking)
+            .AddSingleton<IEntityMapper<IEnumerable<object>, PocoA>, PocoMapper>()
+
+            // Register TrackableMapper (with lineage tracking)
+            .AddSingleton<ITrackableMapper<IEnumerable<object>, PocoA>, TrackablePocoMapper>()
+
             .BuildServiceProvider();
 
         // Resolve services
         var dbLayer = serviceProvider.GetRequiredService<IDbLayer>();
         var lineageTracker = serviceProvider.GetRequiredService<IDataLineageTracker>();
-        var pocoMapper = serviceProvider.GetRequiredService<PocoMapper>();
+
+        var baseMapper = serviceProvider.GetRequiredService<IEntityMapper<IEnumerable<object>, PocoA>>();
+        var trackableMapper = serviceProvider.GetRequiredService<ITrackableMapper<IEnumerable<object>, PocoA>>();
 
         // ✅ Ensure database schema is created **before** inserting records
         dbLayer.InitializeDatabase(typeof(PocoX), typeof(PocoY));
@@ -73,19 +85,37 @@ class Program
         var allPocoX = dbLayer.GetAll<PocoX>();
         var allPocoY = dbLayer.GetAll<PocoY>();
 
-
         // 🔹 Use LINQ to join PocoX and PocoY in-memory
         var joinedRecords = from x in allPocoX
                             join y in allPocoY on x.Id equals y.PocoXId
                             select new { PocoX = x, PocoY = y };
 
-        var mappedRecords = joinedRecords
-            .Select(record => pocoMapper.Map(record.PocoX, record.PocoY))
+        // 🔹 Test **BaseMapper** (without lineage tracking)
+        var baseMappedRecords = joinedRecords
+            .Select(record => baseMapper.Map([[record.PocoX, record.PocoY]]))
             .ToList();
 
-        // 🔹 Display mapped records
-        Console.WriteLine("\nMapped PocoA Records:");
-        foreach (var pocoA in mappedRecords)
+        // 🔹 Test **TrackableMapper** (with lineage tracking)
+        var trackedMappedRecords = joinedRecords
+            .Select(record =>
+            {
+                var mapped = trackableMapper.Map([[record.PocoX, record.PocoY]]);
+                trackableMapper.Track([[record.PocoX, record.PocoY]], mapped).Wait();
+                return mapped;
+            })
+            .ToList();
+
+
+        // 🔹 Display mapped records (BaseMapper)
+        Console.WriteLine("\nMapped PocoA Records (BaseMapper - No Lineage):");
+        foreach (var pocoA in baseMappedRecords)
+        {
+            Console.WriteLine($"Bk: {pocoA.Bk}, NamedCode: {pocoA.NamedCode}, Date: {pocoA.Date}");
+        }
+
+        // 🔹 Display mapped records (TrackableMapper)
+        Console.WriteLine("\nMapped PocoA Records (TrackableMapper - With Lineage):");
+        foreach (var pocoA in trackedMappedRecords)
         {
             Console.WriteLine($"Bk: {pocoA.Bk}, NamedCode: {pocoA.NamedCode}, Date: {pocoA.Date}");
         }

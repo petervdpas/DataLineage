@@ -1,51 +1,40 @@
+using System;
 using System.Collections.Generic;
-using DataLineage.Tracking.Interfaces;
+using System.Linq;
+using DataLineage.Tracking.Mapping;
 using Models.Source;
 using Models.Target;
 
 namespace Mappers
 {
-    public class PocoMapper
+    /// <summary>
+    /// A standard mapper that maps multiple source POCOs (PocoX, PocoY) to PocoA.
+    /// Does not track data lineage.
+    /// </summary>
+    public class PocoMapper : BaseMapper<IEnumerable<object>, PocoA>
     {
-        private readonly IEntityMapper _mapper;
-        private readonly IDataLineageTracker _lineageTracker;
+        public PocoMapper() { } // No lineage tracker needed for base mapper
 
-        public PocoMapper(IEntityMapper mapper, IDataLineageTracker lineageTracker)
+        /// <summary>
+        /// Maps PocoX and PocoY into PocoA.
+        /// </summary>
+        public override PocoA Map(IEnumerable<IEnumerable<object>> sourceData) // ✅ Fix: match base class
         {
-            _mapper = mapper;
-            _lineageTracker = lineageTracker;
-        }
+            var sources = sourceData.SelectMany(x => x).ToList(); // Flatten nested list
+            var pocoX = sources.OfType<PocoX>().FirstOrDefault();
+            var pocoY = sources.OfType<PocoY>().FirstOrDefault();
 
-        public PocoA Map(PocoX pocoX, PocoY pocoY)
-        {
-            return _mapper.Map(new List<object> { pocoX, pocoY }, sources =>
+            if (pocoX == null || pocoY == null)
             {
-                string sourceName = "Progress";
-                string targetName = "FCDM";
+                throw new ArgumentException("Both PocoX and PocoY must be provided.");
+            }
 
-                // 🔹 Track lineage for each mapped property
-                _lineageTracker.Track(
-                    sourceName, nameof(PocoX), nameof(PocoX.Id), true, "Identifier",
-                    "Concatenation with PocoY.Code",
-                    targetName, nameof(PocoA), nameof(PocoA.Bk), true, "BusinessKey");
-
-                _lineageTracker.Track(
-                    sourceName, nameof(PocoX), nameof(PocoX.Name), true, "The Code for PocoX",
-                    "Concatenation with PocoY.Code",
-                    targetName, nameof(PocoA), nameof(PocoA.NamedCode), true, "A NameCode");
-
-                _lineageTracker.Track(
-                    sourceName, nameof(PocoY), nameof(PocoY.PocoYDate), true, "A Date",
-                    "Direct mapping",
-                    targetName, nameof(PocoA), nameof(PocoA.Date), true, "A Date");
-
-                return new PocoA
-                {
-                    Bk = $"{pocoX.Id}_{pocoY.Code}",
-                    NamedCode = $"{pocoX.Name}-{pocoY.Code}",
-                    Date = pocoY.PocoYDate
-                };
-            }, _lineageTracker);
+            return new PocoA
+            {
+                Bk = $"{pocoX.Id}_{pocoY.Code}",
+                NamedCode = $"{pocoX.Name}-{pocoY.Code}",
+                Date = pocoY.PocoYDate
+            };
         }
     }
 }
