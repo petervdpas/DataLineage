@@ -5,16 +5,16 @@ using Microsoft.Extensions.Configuration;
 using System.Collections.Generic;
 using System.Linq;
 using DataLayer;
-using Mappers;
 using System.Reflection;
 using Models.Target;
 using DataLineage.Tracking;
 using DataLineage.Tracking.Sinks;
 using DataLineage.Tracking.Interfaces;
+using System.Threading.Tasks;
 
 class Program
 {
-    static void Main()
+    static async Task Main()
     {
         // Load configuration
         var config = new ConfigurationBuilder()
@@ -35,22 +35,16 @@ class Program
                     options.EnableLineageTracking = true;
                     options.ThrowOnNullSources = true;
                 },
-                new FileLineageSink("lineage.json", append: true))
-
-            // Register BaseMapper (without lineage tracking)
-            .AddSingleton<IEntityMapper<object, PocoA>, PocoMapper>()
+                new FileLineageSink("lineage.json", deleteOnStartup: true))
 
             // Register TrackableMapper (with lineage tracking)
-            .AddSingleton<ITrackableMapper<object, PocoA>, TrackablePocoMapper>()
-
+            .AddSingleton<IGenericTracker<PocoA>, EntityMapper>()
             .BuildServiceProvider();
 
         // Resolve services
         var dbLayer = serviceProvider.GetRequiredService<IDbLayer>();
         var lineageTracker = serviceProvider.GetRequiredService<IDataLineageTracker>();
-
-        var baseMapper = serviceProvider.GetRequiredService<IEntityMapper<object, PocoA>>();
-        var trackableMapper = serviceProvider.GetRequiredService<ITrackableMapper<object, PocoA>>();
+        var mapper = serviceProvider.GetRequiredService<IGenericTracker<PocoA>>();
 
         // ✅ Ensure database schema is created **before** inserting records
         dbLayer.InitializeDatabase(typeof(PocoX), typeof(PocoY));
@@ -90,28 +84,15 @@ class Program
                             join y in allPocoY on x.Id equals y.PocoXId
                             select new { PocoX = x, PocoY = y };
 
-        // 🔹 Test **BaseMapper** (without lineage tracking)
-        var baseMappedRecords = joinedRecords
-            .Select(record => baseMapper.Map([record.PocoX, record.PocoY]))
-            .ToList();
-
-        // 🔹 Test **TrackableMapper** (with lineage tracking)
-        var trackedMappedRecords = joinedRecords
-            .Select(record =>
-            {
-                var mapped = trackableMapper.Map([record.PocoX, record.PocoY]);
-                trackableMapper.Track([record.PocoX, record.PocoY], mapped).Wait();
-                return mapped;
-            })
-            .ToList();
-
-
-        // 🔹 Display mapped records (BaseMapper)
-        Console.WriteLine("\nMapped PocoA Records (BaseMapper - No Lineage):");
-        foreach (var pocoA in baseMappedRecords)
+        // ✅ Process TrackableMapper with Await
+        var trackedMappedRecords = new List<PocoA>();
+        foreach (var record in joinedRecords)
         {
-            Console.WriteLine($"Bk: {pocoA.Bk}, NamedCode: {pocoA.NamedCode}, Date: {pocoA.Date}");
+            var mapped = mapper.Map([record.PocoX, record.PocoY]);
+            await mapper.Track([record.PocoX, record.PocoY], mapped);
+            trackedMappedRecords.Add(mapped);
         }
+
 
         // 🔹 Display mapped records (TrackableMapper)
         Console.WriteLine("\nMapped PocoA Records (TrackableMapper - With Lineage):");
@@ -122,7 +103,8 @@ class Program
 
         // 🔹 Retrieve and display lineage
         Console.WriteLine("\nData Lineage:");
-        foreach (var entry in lineageTracker.GetLineage())
+        var lineageEntries = await lineageTracker.GetLineageAsync();
+        foreach (var entry in lineageEntries)
         {
             Console.WriteLine(entry);
         }

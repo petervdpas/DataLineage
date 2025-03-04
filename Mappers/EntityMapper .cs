@@ -7,9 +7,9 @@ using DataLineage.Tracking.Mapping;
 using Models.Source;
 using Models.Target;
 
-public class TrackablePocoMapper : TrackableBaseMapper<object, PocoA>
+public class EntityMapper : GenericEntityMapper<PocoA>
 {
-    public TrackablePocoMapper(IDataLineageTracker lineageTracker) : base(lineageTracker) { }
+    public EntityMapper(IDataLineageTracker lineageTracker) : base(lineageTracker) { }
 
     public override PocoA Map(List<object> sources)
     {
@@ -52,7 +52,7 @@ public class TrackablePocoMapper : TrackableBaseMapper<object, PocoA>
 
             foreach (var mapping in mappings)
             {
-                _lineageTracker.Track(
+                await _lineageTracker.TrackAsync(
                     sourceSystem, mapping.SourceEntity, mapping.SourceField, true, "Tracked Field",
                     mapping.TransformationRule,
                     targetSystem, mapping.TargetEntity, mapping.TargetField, true, "Mapped Field");
