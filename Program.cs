@@ -38,10 +38,10 @@ class Program
                 new FileLineageSink("lineage.json", append: true))
 
             // Register BaseMapper (without lineage tracking)
-            .AddSingleton<IEntityMapper<IEnumerable<object>, PocoA>, PocoMapper>()
+            .AddSingleton<IEntityMapper<object, PocoA>, PocoMapper>()
 
             // Register TrackableMapper (with lineage tracking)
-            .AddSingleton<ITrackableMapper<IEnumerable<object>, PocoA>, TrackablePocoMapper>()
+            .AddSingleton<ITrackableMapper<object, PocoA>, TrackablePocoMapper>()
 
             .BuildServiceProvider();
 
@@ -49,8 +49,8 @@ class Program
         var dbLayer = serviceProvider.GetRequiredService<IDbLayer>();
         var lineageTracker = serviceProvider.GetRequiredService<IDataLineageTracker>();
 
-        var baseMapper = serviceProvider.GetRequiredService<IEntityMapper<IEnumerable<object>, PocoA>>();
-        var trackableMapper = serviceProvider.GetRequiredService<ITrackableMapper<IEnumerable<object>, PocoA>>();
+        var baseMapper = serviceProvider.GetRequiredService<IEntityMapper<object, PocoA>>();
+        var trackableMapper = serviceProvider.GetRequiredService<ITrackableMapper<object, PocoA>>();
 
         // ✅ Ensure database schema is created **before** inserting records
         dbLayer.InitializeDatabase(typeof(PocoX), typeof(PocoY));
@@ -92,15 +92,15 @@ class Program
 
         // 🔹 Test **BaseMapper** (without lineage tracking)
         var baseMappedRecords = joinedRecords
-            .Select(record => baseMapper.Map([[record.PocoX, record.PocoY]]))
+            .Select(record => baseMapper.Map([record.PocoX, record.PocoY]))
             .ToList();
 
         // 🔹 Test **TrackableMapper** (with lineage tracking)
         var trackedMappedRecords = joinedRecords
             .Select(record =>
             {
-                var mapped = trackableMapper.Map([[record.PocoX, record.PocoY]]);
-                trackableMapper.Track([[record.PocoX, record.PocoY]], mapped).Wait();
+                var mapped = trackableMapper.Map([record.PocoX, record.PocoY]);
+                trackableMapper.Track([record.PocoX, record.PocoY], mapped).Wait();
                 return mapped;
             })
             .ToList();

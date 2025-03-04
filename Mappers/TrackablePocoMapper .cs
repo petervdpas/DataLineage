@@ -7,16 +7,14 @@ using DataLineage.Tracking.Mapping;
 using Models.Source;
 using Models.Target;
 
-public class TrackablePocoMapper : TrackableBaseMapper<IEnumerable<object>, PocoA>
+public class TrackablePocoMapper : TrackableBaseMapper<object, PocoA>
 {
     public TrackablePocoMapper(IDataLineageTracker lineageTracker) : base(lineageTracker) { }
 
-    public override PocoA Map(IEnumerable<IEnumerable<object>> sources)
+    public override PocoA Map(List<object> sources)
     {
-        var flatSources = sources.SelectMany(x => x); // Flatten the sources
-
-        var pocoX = flatSources.OfType<PocoX>().FirstOrDefault();
-        var pocoY = flatSources.OfType<PocoY>().FirstOrDefault();
+        var pocoX = sources.OfType<PocoX>().FirstOrDefault();
+        var pocoY = sources.OfType<PocoY>().FirstOrDefault();
 
         if (pocoX == null || pocoY == null)
         {
@@ -31,12 +29,10 @@ public class TrackablePocoMapper : TrackableBaseMapper<IEnumerable<object>, Poco
         };
     }
 
-    public override async Task Track(IEnumerable<IEnumerable<object>> sources, PocoA result)
+    public override async Task Track(List<object> sources, PocoA result)
     {
-        var flatSources = sources.SelectMany(x => x); // Flatten the sources
-
-        var pocoX = flatSources.OfType<PocoX>().FirstOrDefault();
-        var pocoY = flatSources.OfType<PocoY>().FirstOrDefault();
+        var pocoX = sources.OfType<PocoX>().FirstOrDefault();
+        var pocoY = sources.OfType<PocoY>().FirstOrDefault();
 
         if (pocoX == null || pocoY == null)
         {
