@@ -34,6 +34,8 @@ class Program
                 {
                     options.EnableLineageTracking = true;
                     options.ThrowOnNullSources = true;
+                    options.SourceSystemName = "Progress";
+                    options.TargetSystemName = "FCDM";
                 },
                 new FileLineageSink("lineage.json", deleteOnStartup: true))
 

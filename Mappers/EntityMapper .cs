@@ -29,35 +29,41 @@ public class EntityMapper : GenericEntityMapper<PocoA>
         };
     }
 
-    public override async Task Track(List<object> sources, PocoA result)
+    public override async Task Track(List<object>? sources, PocoA? result)
     {
-        var pocoX = sources.OfType<PocoX>().FirstOrDefault();
-        var pocoY = sources.OfType<PocoY>().FirstOrDefault();
+        var pocoX = sources!.OfType<PocoX>().FirstOrDefault();
+        var pocoY = sources!.OfType<PocoY>().FirstOrDefault();
 
         if (pocoX == null || pocoY == null)
         {
             throw new ArgumentException("Both PocoX and PocoY must be provided for lineage tracking.");
         }
 
-            string sourceSystem = "Progress";
-            string targetSystem = "FCDM";
+        // 🔹 Track lineage dynamically
+        var mappings = new List<(string SourceEntity, string SourceField, string TransformationRule, string TargetEntity, string TargetField)>
+        {
+            (nameof(PocoX), nameof(PocoX.Id), "Concatenation with PocoY.Code", nameof(PocoA), nameof(PocoA.Bk)),
+            (nameof(PocoX), nameof(PocoX.Name), "Concatenation with PocoY.Code", nameof(PocoA), nameof(PocoA.NamedCode)),
+            (nameof(PocoY), nameof(PocoY.PocoYDate), "Direct mapping", nameof(PocoA), nameof(PocoA.Date))
+        };
 
-            // 🔹 Track lineage dynamically
-            var mappings = new List<(string SourceEntity, string SourceField, string TransformationRule, string TargetEntity, string TargetField)>
-            {
-                (nameof(PocoX), nameof(PocoX.Id), "Concatenation with PocoY.Code", nameof(PocoA), nameof(PocoA.Bk)),
-                (nameof(PocoX), nameof(PocoX.Name), "Concatenation with PocoY.Code", nameof(PocoA), nameof(PocoA.NamedCode)),
-                (nameof(PocoY), nameof(PocoY.PocoYDate), "Direct mapping", nameof(PocoA), nameof(PocoA.Date))
-            };
+        foreach (var mapping in mappings)
+        {
+            await _lineageTracker.TrackAsync(
+                sourceSystem: null,
+                sourceEntity: mapping.SourceEntity,
+                sourceField: mapping.SourceField,
+                sourceValidated: true,
+                sourceDescription: "Tracked Field",
+                transformationRule: mapping.TransformationRule,
+                targetSystem: null,
+                targetEntity: mapping.TargetEntity,
+                targetField: mapping.TargetField,
+                targetValidated: true,
+                targetDescription: "Mapped Field"
+            );
+        }
 
-            foreach (var mapping in mappings)
-            {
-                await _lineageTracker.TrackAsync(
-                    sourceSystem, mapping.SourceEntity, mapping.SourceField, true, "Tracked Field",
-                    mapping.TransformationRule,
-                    targetSystem, mapping.TargetEntity, mapping.TargetField, true, "Mapped Field");
-            }
-
-            await Task.CompletedTask;
+        await Task.CompletedTask;
     }
 }
