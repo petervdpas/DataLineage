@@ -12,7 +12,7 @@
       "SIS",
       "DataLineage"
     ],
-    "ModelReferenceUrl": "https:\\example.com",
+    "ModelReferenceUrl": "https://example.com",
     "Classification": {
       "Confidentiality": 1,
       "Integrity": 1,

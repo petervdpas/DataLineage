@@ -50,7 +50,7 @@ public class EntityMapper : GenericEntityMapper<PocoA>
             string? ModelReferenceUrl,
             int? Classification)>
         {
-            (nameof(PocoX), nameof(PocoX.Id), "Concatenation with PocoY.Code", nameof(PocoA), nameof(PocoA.Bk), true, "https:\\example.com", 111),
+            (nameof(PocoX), nameof(PocoX.Id), "Concatenation with PocoY.Code", nameof(PocoA), nameof(PocoA.Bk), true, "https://example.com", 111),
             (nameof(PocoX), nameof(PocoX.Name), "Concatenation with PocoY.Code", nameof(PocoA), nameof(PocoA.NamedCode), true, null, 211),
             (nameof(PocoY), nameof(PocoY.PocoYDate), "Direct mapping", nameof(PocoA), nameof(PocoA.Date), false, null, 123)
         };
