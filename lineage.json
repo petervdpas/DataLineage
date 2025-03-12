@@ -3,39 +3,60 @@
     "SourceSystem": "Progress",
     "SourceEntity": "PocoX",
     "SourceField": "Id",
-    "SourceValidated": true,
-    "SourceDescription": "Tracked Field",
     "TransformationRule": "Concatenation with PocoY.Code",
     "TargetSystem": "FCDM",
     "TargetEntity": "PocoA",
     "TargetField": "Bk",
-    "TargetValidated": true,
-    "TargetDescription": "Mapped Field"
+    "Validated": true,
+    "Tags": [
+      "SIS",
+      "DataLineage"
+    ],
+    "ModelReferenceUrl": "https:\\example.com",
+    "Classification": {
+      "Confidentiality": 1,
+      "Integrity": 1,
+      "Availability": 1
+    }
   },
   {
     "SourceSystem": "Progress",
     "SourceEntity": "PocoX",
     "SourceField": "Name",
-    "SourceValidated": true,
-    "SourceDescription": "Tracked Field",
     "TransformationRule": "Concatenation with PocoY.Code",
     "TargetSystem": "FCDM",
     "TargetEntity": "PocoA",
     "TargetField": "NamedCode",
-    "TargetValidated": true,
-    "TargetDescription": "Mapped Field"
+    "Validated": true,
+    "Tags": [
+      "SIS",
+      "DataLineage"
+    ],
+    "ModelReferenceUrl": "",
+    "Classification": {
+      "Confidentiality": 2,
+      "Integrity": 1,
+      "Availability": 1
+    }
   },
   {
     "SourceSystem": "Progress",
     "SourceEntity": "PocoY",
     "SourceField": "PocoYDate",
-    "SourceValidated": true,
-    "SourceDescription": "Tracked Field",
     "TransformationRule": "Direct mapping",
     "TargetSystem": "FCDM",
     "TargetEntity": "PocoA",
     "TargetField": "Date",
-    "TargetValidated": true,
-    "TargetDescription": "Mapped Field"
+    "Validated": false,
+    "Tags": [
+      "SIS",
+      "DataLineage"
+    ],
+    "ModelReferenceUrl": "",
+    "Classification": {
+      "Confidentiality": 1,
+      "Integrity": 2,
+      "Availability": 3
+    }
   }
 ]

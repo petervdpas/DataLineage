@@ -40,11 +40,19 @@ public class EntityMapper : GenericEntityMapper<PocoA>
         }
 
         // 🔹 Track lineage dynamically
-        var mappings = new List<(string SourceEntity, string SourceField, string TransformationRule, string TargetEntity, string TargetField)>
+        var mappings = new List<(
+            string SourceEntity, 
+            string SourceField, 
+            string TransformationRule, 
+            string TargetEntity, 
+            string TargetField,
+            bool Validated,
+            string? ModelReferenceUrl,
+            int? Classification)>
         {
-            (nameof(PocoX), nameof(PocoX.Id), "Concatenation with PocoY.Code", nameof(PocoA), nameof(PocoA.Bk)),
-            (nameof(PocoX), nameof(PocoX.Name), "Concatenation with PocoY.Code", nameof(PocoA), nameof(PocoA.NamedCode)),
-            (nameof(PocoY), nameof(PocoY.PocoYDate), "Direct mapping", nameof(PocoA), nameof(PocoA.Date))
+            (nameof(PocoX), nameof(PocoX.Id), "Concatenation with PocoY.Code", nameof(PocoA), nameof(PocoA.Bk), true, "https:\\example.com", 111),
+            (nameof(PocoX), nameof(PocoX.Name), "Concatenation with PocoY.Code", nameof(PocoA), nameof(PocoA.NamedCode), true, null, 211),
+            (nameof(PocoY), nameof(PocoY.PocoYDate), "Direct mapping", nameof(PocoA), nameof(PocoA.Date), false, null, 123)
         };
 
         foreach (var mapping in mappings)
@@ -53,14 +61,14 @@ public class EntityMapper : GenericEntityMapper<PocoA>
                 sourceSystem: null,
                 sourceEntity: mapping.SourceEntity,
                 sourceField: mapping.SourceField,
-                sourceValidated: true,
-                sourceDescription: "Tracked Field",
                 transformationRule: mapping.TransformationRule,
                 targetSystem: null,
                 targetEntity: mapping.TargetEntity,
                 targetField: mapping.TargetField,
-                targetValidated: true,
-                targetDescription: "Mapped Field"
+                validated: mapping.Validated,
+                tags: ["SIS", "DataLineage"],
+                modelReferenceUrl: mapping.ModelReferenceUrl,
+                classification: mapping.Classification
             );
         }
 
